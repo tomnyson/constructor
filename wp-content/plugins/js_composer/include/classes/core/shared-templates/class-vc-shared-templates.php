@@ -180,9 +180,10 @@ class Vc_Shared_Templates {
 		) ) );
 
 		$templateId = vc_request_param( 'id' );
-		$requestUrl = $this->getTemplateDownloadLink( $templateId );
-		$status = false;
-		$file = $this->downloadTemplate( $requestUrl );
+		//$requestUrl = $this->getTemplateDownloadLink( $templateId );
+		$status = true;//NULLED
+		$file = dirname( __FILE__ ) . '/xml/' . $templateId . '.xml';
+		//$file = $this->downloadTemplate( $requestUrl );
 		$data = array();
 		if ( $file ) {
 			new Vc_WXR_Parser_Plugin();
@@ -210,7 +211,24 @@ class Vc_Shared_Templates {
 	 * @return bool|string
 	 */
 	private function downloadTemplate( $requestUrl ) {
-		$downloadUrlRequest = wp_remote_get( $requestUrl );
+		// FIX SSL SNI
+		$filter_add = true;
+		if ( function_exists( 'curl_version' ) ) {
+			$version = curl_version();
+			if ( version_compare( $version['version'], '7.18', '>=' ) ) {
+				$filter_add = false;
+			}
+		}
+		if ( $filter_add ) {
+			add_filter( 'https_ssl_verify', '__return_false' );
+		}
+		$downloadUrlRequest = wp_remote_get( $requestUrl, array(
+			'timeout' => 30,
+		) );
+
+		if ( $filter_add ) {
+			remove_filter( 'https_ssl_verify', '__return_false' );
+		}
 		if ( is_array( $downloadUrlRequest ) && 200 === $downloadUrlRequest['response']['code'] ) {
 			return $this->parseRequest( $downloadUrlRequest );
 		}
@@ -244,13 +262,18 @@ class Vc_Shared_Templates {
 	 * @return array
 	 */
 	public function addTemplatesTab( $data ) {
-		$newCategory = array(
-			'category' => 'shared_templates',
-			'category_name' => __( 'Template library', 'js_composer' ),
-			'category_weight' => 10,
-			'templates' => $this->getTemplates(),
-		);
-		$data[] = $newCategory;
+		if ( vc_user_access()->part( 'templates' )->checkStateAny( true, null, 'add' )->get() ) {
+			$templates = $this->getTemplates();
+			if ( ! empty( $templates ) || vc_user_access()->part( 'templates' )->checkStateAny( true, null )->get() ) {
+				$newCategory = array(
+					'category' => 'shared_templates',
+					'category_name' => __( 'Template library', 'js_composer' ),
+					'category_weight' => 10,
+					'templates' => $this->getTemplates(),
+				);
+				$data[] = $newCategory;
+			}
+		}
 
 		return $data;
 	}

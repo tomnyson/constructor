@@ -26,11 +26,12 @@ define( 'DB_NAME', 'constructor' );
 define( 'DB_USER', 'root' );
 
 /** Mật khẩu của database */
-define( 'DB_PASSWORD', '123456' );
-
+define( 'DB_PASSWORD', 'Admin123@' );
+define('WP_HOME','http://xaynhadaklak.com');
+define('WP_SITEURL','http://xaynhadaklak.com');
 /** Hostname của database */
 define( 'DB_HOST', 'localhost' );
-
+	define( 'WP_MEMORY_LIMIT', '256M' );
 /** Database charset sử dụng để tạo bảng database. */
 define( 'DB_CHARSET', 'utf8mb4' );
 
